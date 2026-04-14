@@ -37,15 +37,15 @@ export class AuthService {
 
     res.cookie('token', accessToken, {
       httpOnly: true,
-      secure: true,
-      sameSite: 'none',
-      maxAge: 1 * 60 * 60 * 1000,
+      secure: this.configService.get<string>('NODE_ENV') === 'production',
+      sameSite:
+        this.configService.get<string>('NODE_ENV') === 'production'
+          ? 'none'
+          : 'lax',
+      maxAge: 60 * 60 * 1000,
     });
 
     return {
-      user,
-      accessToken,
-      refreshToken,
       message: 'Login successful',
     };
   }
@@ -53,14 +53,6 @@ export class AuthService {
   logout(res: Response) {
     res.cookie('token', '', {
       httpOnly: true,
-      secure: true,
-      sameSite: 'none',
-      maxAge: 0,
-      expires: new Date(0),
-    });
-
-    res.cookie('isLogin', '', {
-      httpOnly: false,
       secure: true,
       sameSite: 'none',
       maxAge: 0,
