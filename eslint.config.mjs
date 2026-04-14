@@ -19,9 +19,9 @@ export default tseslint.config(
       },
       sourceType: 'commonjs',
       parserOptions: {
-        projectService: true,
+        project: ['./tsconfig.json'],
         tsconfigRootDir: import.meta.dirname,
-      },
+      }
     },
   },
   {
@@ -29,6 +29,10 @@ export default tseslint.config(
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-floating-promises': 'warn',
       '@typescript-eslint/no-unsafe-argument': 'warn',
+      '@typescript-eslint/no-unsafe-call': 'off', // them vao
+      '@typescript-eslint/no-unsafe-assignment': 'off', // them vao
+      '@typescript-eslint/no-unsafe-member-access': 'off', // them vao
+      '@typescript-eslint/no-unsafe-return': 'off', // them vao
       "prettier/prettier": ["error", { endOfLine: "auto" }],
     },
   },
