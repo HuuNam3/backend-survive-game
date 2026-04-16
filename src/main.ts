@@ -17,6 +17,7 @@ async function bootstrap() {
       'http://localhost:3000',
       'http://localhost:4000',
       'http://localhost:7456',
+      'https://coop-survive-online.vercel.app',
     ],
     credentials: true,
   });
