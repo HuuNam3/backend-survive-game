@@ -37,16 +37,22 @@ export class AuthService {
 
     res.cookie('token', accessToken, {
       httpOnly: true,
-      secure: this.configService.get<string>('NODE_ENV') === 'production',
-      sameSite:
-        this.configService.get<string>('NODE_ENV') === 'production'
-          ? 'none'
-          : 'lax',
+      secure: true, // Luôn để true nếu chạy trên Render/HTTPS
+      sameSite: 'none', // Cho phép cross-site cookies
       maxAge: 60 * 60 * 1000,
     });
 
     return {
       message: 'Login successful',
+      accessToken,
+      refreshToken,
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        name: user.name,
+        money: user.money,
+      },
     };
   }
 
