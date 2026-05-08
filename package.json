@@ -46,13 +46,14 @@
     "winston": "^3.19.0",
     "@swc/cli": "^0.8.1",
     "@swc/core": "^1.15.33",
-    "swc-loader": "^0.2.7"
+    "swc-loader": "^0.2.7",
+    "@nestjs/cli": "^11.0.21",
+    "@nestjs/schematics": "^11.0.0",
+    "typescript": "^5.7.3"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.18.0",
-    "@nestjs/cli": "^11.0.21",
-    "@nestjs/schematics": "^11.0.0",
     "@nestjs/testing": "^11.0.1",
     "@types/bcrypt": "^6.0.0",
     "@types/cookie-parser": "^1.4.10",
@@ -72,7 +73,6 @@
     "ts-loader": "^9.5.2",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.7.3",
     "typescript-eslint": "^8.20.0"
   },
   "jest": {
