@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bầu Cua Online - Fix Timer & Pass</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1a1a1a; color: white; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .container { background: #2d2d2d; padding: 20px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); width: 500px; }
+        .status-panel { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; background: #3d3d3d; padding: 15px; border-radius: 8px; }
+        .status-item { text-align: center; }
+        .status-value { font-size: 20px; font-weight: bold; color: #00ff88; }
+        .money-value { color: #ffc107; }
+        .betting-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px; }
+        .bet-box { background: #444; border: 2px solid #555; padding: 15px; border-radius: 8px; text-align: center; cursor: pointer; transition: 0.2s; }
+        .bet-box:hover { border-color: #007bff; background: #555; }
+        .bet-box.winner { border-color: #ffc107; background: #6b5514; transform: scale(1.05); }
+        .bet-count { font-size: 18px; font-weight: bold; margin-top: 5px; color: #00d4ff; }
+        .result-panel { margin-top: 20px; text-align: center; font-size: 20px; color: #ffc107; min-height: 30px; font-weight: bold; }
+        .input-group { margin-bottom: 10px; }
+        input { width: 100%; padding: 10px; margin-top: 5px; border-radius: 4px; border: none; background: #444; color: white; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        button:hover { background: #0056b3; }
+        #logs { height: 150px; overflow-y: auto; background: #000; padding: 10px; border-radius: 4px; font-size: 13px; margin-top: 20px; color: #aaa; }
+        .log-entry { margin-bottom: 5px; border-bottom: 1px solid #222; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2 style="text-align:center">Bầu Cua Online - Fix Timer</h2>
+        
+        <div id="authArea">
+            <div class="input-group">
+                <label>Username</label>
+                <input type="text" id="loginUser" placeholder="Username...">
+            </div>
+            <div class="input-group">
+                <label>Password</label>
+                <input type="password" id="loginPass" placeholder="Password...">
+            </div>
+            <button id="btnLogin">ĐĂNG NHẬP</button>
+        </div>
+
+        <div id="mainArea" style="display:none">
+            <div class="status-panel">
+                <div class="status-item"><div>PHASE</div><div id="phaseValue" class="status-value">---</div></div>
+                <div class="status-item"><div>TIME</div><div id="countdownValue" class="status-value">00</div></div>
+                <div class="status-item"><div>TIỀN</div><div id="moneyValue" class="status-value money-value">0đ</div></div>
+            </div>
+
+            <div id="roomSetup">
+                <div class="input-group">
+                    <label>Mã Phòng</label>
+                    <input type="text" id="roomId" value="123456">
+                </div>
+                <div class="input-group">
+                    <label>Mật khẩu Phòng</label>
+                    <input type="password" id="roomPass" value="nam123">
+                </div>
+                <button id="btnJoin">VÀO PHÒNG</button>
+            </div>
+
+            <div id="gameArea" style="display:none">
+                <div class="result-panel" id="resultDisplay">Đang chờ đặt cược...</div>
+                <div class="betting-grid">
+                    <div class="bet-box" onclick="placeBet(0)"><div>Bầu (0)</div><div id="bet0" class="bet-count">0đ</div></div>
+                    <div class="bet-box" onclick="placeBet(1)"><div>Cua (1)</div><div id="bet1" class="bet-count">0đ</div></div>
+                    <div class="bet-box" onclick="placeBet(2)"><div>Tôm (2)</div><div id="bet2" class="bet-count">0đ</div></div>
+                    <div class="bet-box" onclick="placeBet(3)"><div>Cá (3)</div><div id="bet3" class="bet-count">0đ</div></div>
+                    <div class="bet-box" onclick="placeBet(4)"><div>Gà (4)</div><div id="bet4" class="bet-count">0đ</div></div>
+                    <div class="bet-box" onclick="placeBet(5)"><div>Nai (5)</div><div id="bet5" class="bet-count">0đ</div></div>
+                </div>
+            </div>
+        </div>
+        <div id="logs"></div>
+    </div>
+
+    <script>
+        const socket = io('http://localhost:4000');
+        let myName = '';
+
+        function addLog(msg, isWin = false) {
+            const div = document.createElement('div');
+            div.className = 'log-entry' + (isWin ? ' win-notif' : '');
+            div.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            document.getElementById('logs').prepend(div);
+        }
+
+        function formatMoney(amount) {
+            return new Intl.NumberFormat('vi-VN').format(amount) + 'đ';
+        }
+
+        document.getElementById('btnLogin').onclick = async () => {
+            const username = document.getElementById('loginUser').value;
+            const password = document.getElementById('loginPass').value;
+            try {
+                const response = await fetch('http://localhost:4000/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    myName = username;
+                    document.getElementById('authArea').style.display = 'none';
+                    document.getElementById('mainArea').style.display = 'block';
+                    addLog('Chào ' + myName + '! Đăng nhập thành công.');
+                } else alert('Lỗi: ' + data.message);
+            } catch (err) { alert('Lỗi kết nối server!'); }
+        };
+
+        document.getElementById('btnJoin').onclick = () => {
+            const id = document.getElementById('roomId').value;
+            const password = document.getElementById('roomPass').value;
+            socket.emit('joinRoom', { id, password, playerName: myName }, (res) => {
+                if (res.status === 'success') {
+                    document.getElementById('roomSetup').style.display = 'none';
+                    document.getElementById('gameArea').style.display = 'block';
+                    document.getElementById('moneyValue').innerText = formatMoney(res.money);
+                    addLog('Đã vào phòng: ' + id);
+                } else alert(res.message);
+            });
+        };
+
+        socket.on('roomUpdate', (data) => {
+            document.getElementById('phaseValue').innerText = data.phase.toUpperCase();
+            document.getElementById('countdownValue').innerText = data.countdown;
+            if (data.phase === 'betting' && data.countdown === 30) resetUI();
+        });
+
+        socket.on('gameResult', (data) => {
+            document.getElementById('resultDisplay').innerText = 'KẾT QUẢ: ' + data.result.join(' - ');
+            data.result.forEach(val => document.querySelectorAll('.bet-box')[val].classList.add('winner'));
+            if (data.payouts) {
+                const myPayout = data.payouts.find(p => p.playerName === myName);
+                if (myPayout) {
+                    document.getElementById('moneyValue').innerText = formatMoney(myPayout.currentMoney);
+                    if (myPayout.totalWin > 0) addLog(`THẮNG: +${formatMoney(myPayout.totalWin)}`, true);
+                }
+            }
+        });
+
+        socket.on('betsUpdate', (data) => {
+            if (data.bets[myName]) {
+                const myBets = data.bets[myName];
+                for (let i = 0; i < 6; i++) document.getElementById('bet' + i).innerText = formatMoney(myBets[i]);
+            }
+        });
+
+        function placeBet(index) {
+            const id = document.getElementById('roomId').value;
+            socket.emit('placeBet', { roomId: id, playerName: myName, betIndex: index }, (res) => {
+                if (res.status === 'success') document.getElementById('moneyValue').innerText = formatMoney(res.money);
+                else alert(res.message);
+            });
+        }
+
+        function resetUI() {
+            for (let i = 0; i < 6; i++) {
+                document.getElementById('bet' + i).innerText = '0đ';
+                document.querySelectorAll('.bet-box')[i].classList.remove('winner');
+            }
+            document.getElementById('resultDisplay').innerText = 'ĐANG ĐẶT CƯỢC...';
+        }
+    </script>
+</body>
+</html>

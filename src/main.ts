@@ -13,12 +13,7 @@ async function bootstrap() {
     logger: winstonLogger,
   });
   app.enableCors({
-    origin: [
-      'http://localhost:3000',
-      'http://localhost:4000',
-      'http://localhost:7456',
-      'https://coop-survive-online.vercel.app',
-    ],
+    origin: true, // Cho phép tất cả các nguồn (bao gồm cả file:/// từ trình duyệt)
     credentials: true,
   });
   app.use(cookieParser());

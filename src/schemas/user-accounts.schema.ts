@@ -24,6 +24,9 @@ export class UserAccounts {
   @Prop()
   role: string;
 
+  @Prop({ default: 100000 })
+  money: number;
+
   @Prop()
   refresh_token: string;
 

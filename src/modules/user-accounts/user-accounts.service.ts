@@ -16,33 +16,31 @@ export class UserAccountsService {
     @InjectConnection() private readonly connection: Connection,
   ) {}
 
-  async findAll(includes?: string): Promise<any> {
+  async findAll(includes?: string): Promise<UserAccounts[]> {
     if (!checkCollections(includes)) {
       return await this.TModel.find().exec();
     }
     const include = includeHandle(includes);
-    if (include) {
-      return await this.TModel.aggregate(include);
-    }
+    return await this.TModel.aggregate(include);
   }
 
-  async getRole(identifier: string): Promise<any> {
-    const role = await this.TModel.findOne({
+  async getRole(identifier: string): Promise<{ role: string } | null> {
+    const user = await this.TModel.findOne({
       $or: [{ email: identifier }, { username: identifier }],
     })
       .select('role')
       .exec();
 
-    return role;
+    return user ? { role: user.role } : null;
   }
 
-  async findByEmailOrUsername(identifier: string) {
+  async findByEmailOrUsername(identifier: string): Promise<UserAccountsDocument | null> {
     return this.TModel.findOne({
       $or: [{ email: identifier }, { username: identifier }],
     }).exec();
-    // .select('-password')
   }
-  async findByEmailOrUsernameNoPass(identifier: string) {
+
+  async findByEmailOrUsernameNoPass(identifier: string): Promise<UserAccountsDocument | null> {
     return this.TModel.findOne({
       $or: [{ email: identifier }, { username: identifier }],
     })
@@ -50,31 +48,29 @@ export class UserAccountsService {
       .exec();
   }
 
-  async findOne(id: string, includes?: string): Promise<any> {
+  async findOne(id: string, includes?: string): Promise<UserAccounts | null> {
     if (!checkCollections(includes)) {
       return await this.TModel.findById(id).exec();
     }
     const include = includeHandle(includes, id);
-    if (include) {
-      const res: UserAccounts[] = await this.TModel.aggregate(include);
-      return res[0] || null;
-    }
+    const res: UserAccounts[] = await this.TModel.aggregate(include);
+    return res[0] || null;
   }
 
-  async create(course: Partial<UserAccounts>) {
+  async create(course: Partial<UserAccounts>): Promise<UserAccountsDocument> {
     return await this.TModel.create(course);
   }
 
   async update(
     id: string,
     updateDto: UpdateUserAccountsDto,
-  ): Promise<UserAccounts | null> {
+  ): Promise<UserAccountsDocument | null> {
     return await this.TModel.findByIdAndUpdate(id, updateDto, {
       new: true,
     }).exec();
   }
 
-  async delete(id: string) {
-    return await this.TModel.findByIdAndDelete(id);
+  async delete(id: string): Promise<UserAccountsDocument | null> {
+    return await this.TModel.findByIdAndDelete(id).exec();
   }
 }

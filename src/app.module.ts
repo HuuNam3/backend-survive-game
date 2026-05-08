@@ -6,6 +6,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { LoggerMiddleware } from './middeware/logger/logger.middleware';
 import { UserAccountsModule } from './modules/user-accounts/user-accounts.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { RoomsModule } from './modules/rooms/rooms.module';
 import * as Joi from 'joi';
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import * as Joi from 'joi';
     }),
     AuthModule,
     UserAccountsModule,
+    RoomsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

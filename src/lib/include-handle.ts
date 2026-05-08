@@ -1,11 +1,31 @@
 import { PipelineStage, Types } from 'mongoose';
 
+export enum Collections {
+  courses = 'courses',
+  lessons = 'lessons',
+  lessonContain = 'lesson_contain',
+  courseIntroduction = 'course_introduction',
+  courseCategories = 'course_categories',
+}
+
+const foreignFieldMap: Record<Collections, string> = {
+  [Collections.courses]: 'course_categories_id',
+  [Collections.lessons]: 'course_id',
+  [Collections.lessonContain]: 'lesson_id',
+  [Collections.courseIntroduction]: 'course_id',
+  [Collections.courseCategories]: '',
+};
+
+function getForeignField(collection: Collections): string {
+  return foreignFieldMap[collection] || '';
+}
+
 export function includeHandle(
-  inc: any,
+  inc: Collections,
   id?: string,
   slug?: string,
   course_id?: string,
-) {
+): PipelineStage[] {
   const pipeline: PipelineStage[] = [];
 
   if (id) {
@@ -34,35 +54,14 @@ export function includeHandle(
 
   pipeline.push({
     $lookup: {
-      from: inc as string,
+      from: inc,
       localField: '_id',
-      foreignField: getForeignField(inc as string),
-      as: inc as string,
+      foreignField: getForeignField(inc),
+      as: inc,
     },
   });
 
   return pipeline;
-}
-
-export enum Collections {
-  courses = 'courses',
-  lessons = 'lessons',
-  lessonContain = 'lesson_contain',
-  courseIntroduction = 'course_introduction',
-  courseCategories = 'course_categories',
-}
-
-const foreignFieldMap: Record<Collections, string> = {
-  [Collections.courses]: 'course_categories_id',
-  [Collections.lessons]: 'course_id',
-  [Collections.lessonContain]: 'lesson_id',
-  [Collections.courseIntroduction]: 'course_id',
-  [Collections.courseCategories]: '',
-};
-
-function getForeignField(collection: string): string {
-  const field = foreignFieldMap[collection as Collections];
-  return field;
 }
 
 export function checkCollections(value: unknown): value is Collections {
